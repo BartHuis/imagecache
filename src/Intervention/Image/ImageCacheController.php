@@ -23,7 +23,7 @@ class ImageCacheController extends BaseController
         switch (strtolower($template)) {
             case 'original':
                 return $this->getOriginal($filename);
-
+            
             case 'download':
                 return $this->getDownload($filename);
             
@@ -31,7 +31,7 @@ class ImageCacheController extends BaseController
                 return $this->getImage($template, $filename);
         }
     }
-
+    
     /**
      * Get HTTP response of template applied image file
      *
@@ -43,11 +43,11 @@ class ImageCacheController extends BaseController
     {
         $template = $this->getTemplate($template);
         $path = $this->getImagePath($filename);
-
+        
         // image manipulation based on callback
         $manager = new ImageManager(Config::get('image'));
         $content = $manager->cache(function ($image) use ($template, $path) {
-
+            
             if ($template instanceof Closure) {
                 // build from closure callback template
                 $template($image->make($path));
@@ -57,11 +57,10 @@ class ImageCacheController extends BaseController
             }
             
         }, config('imagecache.lifetime'));
-    
         ob_end_clean();
         return $this->buildResponse($content);
     }
-
+    
     /**
      * Get HTTP response of original image file
      *
@@ -74,7 +73,7 @@ class ImageCacheController extends BaseController
         ob_end_clean();
         return $this->buildResponse(file_get_contents($path));
     }
-
+    
     /**
      * Get HTTP response of original image as download
      *
@@ -84,28 +83,28 @@ class ImageCacheController extends BaseController
     public function getDownload($filename)
     {
         $response = $this->getOriginal($filename);
-
+        
         return $response->header(
             'Content-Disposition',
             'attachment; filename=' . $filename
         );
     }
-
+    
     /**
      * Returns corresponding template object from given template name
      *
      * @param  string $template
      * @return mixed
      */
-    private function getTemplate($template)
+    protected function getTemplate($template)
     {
         $template = config("imagecache.templates.{$template}");
-
+        
         switch (true) {
             // closure template found
             case is_callable($template):
                 return $template;
-
+            
             // filter template found
             case class_exists($template):
                 return new $template;
@@ -116,14 +115,14 @@ class ImageCacheController extends BaseController
                 break;
         }
     }
-
+    
     /**
      * Returns full image path from given filename
      *
      * @param  string $filename
      * @return string
      */
-    private function getImagePath($filename)
+    protected function getImagePath($filename)
     {
         // find file
         foreach (config('imagecache.paths') as $path) {
@@ -134,27 +133,33 @@ class ImageCacheController extends BaseController
                 return $image_path;
             }
         }
-
+        
         // file not found
         abort(404);
     }
-
+    
     /**
      * Builds HTTP response from given image data
      *
-     * @param  string $content 
+     * @param  string $content
      * @return Illuminate\Http\Response
      */
-    private function buildResponse($content)
+    protected function buildResponse($content)
     {
         // define mime type
         $mime = finfo_buffer(finfo_open(FILEINFO_MIME_TYPE), $content);
-
+        
+        // respond with 304 not modified if browser has the image cached
+        $etag = md5($content);
+        $not_modified = isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] == $etag;
+        $content = $not_modified ? NULL : $content;
+        $status_code = $not_modified ? 304 : 200;
+        
         // return http response
-        return new IlluminateResponse($content, 200, array(
+        return new IlluminateResponse($content, $status_code, array(
             'Content-Type' => $mime,
             'Cache-Control' => 'max-age='.(config('imagecache.lifetime')*60).', public',
-            'Etag' => md5($content)
+            'Etag' => $etag
         ));
     }
 }
