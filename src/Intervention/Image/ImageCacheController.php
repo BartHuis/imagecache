@@ -57,7 +57,8 @@ class ImageCacheController extends BaseController
             }
             
         }, config('imagecache.lifetime'));
-
+    
+        ob_end_clean();
         return $this->buildResponse($content);
     }
 
@@ -70,7 +71,7 @@ class ImageCacheController extends BaseController
     public function getOriginal($filename)
     {
         $path = $this->getImagePath($filename);
-
+        ob_end_clean();
         return $this->buildResponse(file_get_contents($path));
     }
 
@@ -96,7 +97,7 @@ class ImageCacheController extends BaseController
      * @param  string $template
      * @return mixed
      */
-    protected function getTemplate($template)
+    private function getTemplate($template)
     {
         $template = config("imagecache.templates.{$template}");
 
@@ -122,7 +123,7 @@ class ImageCacheController extends BaseController
      * @param  string $filename
      * @return string
      */
-    protected function getImagePath($filename)
+    private function getImagePath($filename)
     {
         // find file
         foreach (config('imagecache.paths') as $path) {
@@ -144,22 +145,16 @@ class ImageCacheController extends BaseController
      * @param  string $content 
      * @return Illuminate\Http\Response
      */
-    protected function buildResponse($content)
+    private function buildResponse($content)
     {
         // define mime type
         $mime = finfo_buffer(finfo_open(FILEINFO_MIME_TYPE), $content);
 
-        // respond with 304 not modified if browser has the image cached
-        $etag = md5($content);
-        $not_modified = isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] == $etag;
-        $content = $not_modified ? NULL : $content;
-        $status_code = $not_modified ? 304 : 200;
-
         // return http response
-        return new IlluminateResponse($content, $status_code, array(
+        return new IlluminateResponse($content, 200, array(
             'Content-Type' => $mime,
             'Cache-Control' => 'max-age='.(config('imagecache.lifetime')*60).', public',
-            'Etag' => $etag
+            'Etag' => md5($content)
         ));
     }
 }
