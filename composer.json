@@ -1,7 +1,7 @@
 {
     "name": "barthuis/imagecache",
     "description": "Caching extension for the Intervention Image Class, with bugfix",
-    "homepage": "https://github.com/laravel/framework/issues/18687#issuecomment-292211761",
+    "homepage": "https://github.com/laravel/framework/issues/18687",
     "keywords": ["image", "gd", "imagick", "laravel", "cache"],
     "license": "MIT",
     "authors": [
