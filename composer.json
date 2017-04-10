@@ -1,7 +1,7 @@
 {
-    "name": "intervention/imagecache",
-    "description": "Caching extension for the Intervention Image Class",
-    "homepage": "http://image.intervention.io",
+    "name": "barthuis/imagecache",
+    "description": "Caching extension for the Intervention Image Class, with bugfix",
+    "homepage": "https://github.com/laravel/framework/issues/18687#issuecomment-292211761",
     "keywords": ["image", "gd", "imagick", "laravel", "cache"],
     "license": "MIT",
     "authors": [
@@ -9,7 +9,12 @@
             "name": "Oliver Vogel",
             "email": "oliver@olivervogel.net",
             "homepage": "http://olivervogel.net/"
-        }
+        },
+        {
+            "name": "bugfix by Bart huisman",
+            "email": "barthuisman@gmail.com"
+        },
+        
     ],
     "require": {
         "php": ">=5.3.0",
